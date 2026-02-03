@@ -1,0 +1,46 @@
+# Suspicious URLs for testing
+
+# Insecure HTTP
+http://example.com/login
+
+# Credentials in URL
+https://admin:password123@example.com/dashboard
+
+# IP-based URL
+http://192.168.1.100/admin
+
+# Suspicious TLD
+https://secure-login.tk/verify
+
+# URL shortener
+https://bit.ly/3xYz123
+
+# Phishing keywords in path
+https://example.com/secure/login/verify/account
+
+# Open redirect
+https://trusted.com/redirect?url=https://evil.com/steal
+
+# Brand in subdomain
+https://google.login.evil-site.com/signin
+
+# Brand in domain
+https://google-security.com/alert
+
+# Executable download
+https://example.com/download/setup.exe
+
+# Path traversal
+https://example.com/files/../../etc/passwd
+
+# Double encoding
+https://example.com/%252e%252e/admin
+
+# Non-standard port (backdoor)
+https://example.com:4444/callback
+
+# Sensitive query param
+https://api.example.com/data?api_key=secret123&token=abc
+
+# Data URI
+data:text/html,<script>alert(1)</script>

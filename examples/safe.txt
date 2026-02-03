@@ -1,0 +1,6 @@
+# Safe URLs for testing
+https://github.com/kriskimmerle/logscan
+https://docs.python.org/3/library/re.html
+https://www.google.com/search?q=python+tutorials
+https://api.stripe.com/v1/charges
+https://registry.npmjs.org/express
