@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+      
+      - name: Run tests
+        run: |
+          pytest test_urlaudit.py -v --cov=urlaudit --cov-report=term-missing
+      
+      - name: Test CLI functionality
+        run: |
+          python urlaudit.py --version
+          python urlaudit.py --list-rules
+          python urlaudit.py https://example.com
+          python urlaudit.py --json https://example.com
+          python urlaudit.py --check https://example.com
+      
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12'
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      
+      - name: Install ruff
+        run: pip install ruff
+      
+      - name: Run ruff
+        run: ruff check urlaudit.py test_urlaudit.py --select=E,F,W
+        continue-on-error: true
+
+  test-cli-examples:
+    name: Test CLI Examples
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      
+      - name: Test various URL patterns
+        run: |
+          # Safe URL
+          python urlaudit.py https://google.com
+          
+          # Phishing patterns
+          python urlaudit.py http://paypal-verify.tk || true
+          python urlaudit.py javascript:alert\(1\) || true
+          
+          # IP addresses
+          python urlaudit.py http://192.168.1.1 || true
+          
+          # JSON output
+          python urlaudit.py --json https://bit.ly/test | python -m json.tool
+          
+          echo "All CLI examples passed"
+
+  security-check:
+    name: Security Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      
+      - name: Run urlaudit on itself
+        run: |
+          # Test that urlaudit can analyze URLs in its own README
+          if [ -f README.md ]; then
+            python urlaudit.py README.md || true
+          fi
+          
+          # Test CI mode with dangerous URL (should exit 1)
+          if python urlaudit.py --check javascript:alert\(1\); then
+            echo "ERROR: --check mode should have failed on dangerous URL"
+            exit 1
+          else
+            echo "SUCCESS: --check mode correctly detected dangerous URL"
+          fi
